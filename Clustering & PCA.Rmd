@@ -1,0 +1,223 @@
+---
+title: "Clustering and PCA Assignment"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## R Markdown
+
+```{r}
+install.packages("ggplot2")
+library(ggplot2)
+
+install.packages("dplyr")
+library(dplyr)
+```
+
+#### Table of contents
+
+1. [Data preparation](#Data_preparation)  
+2. [Cluster analysis (agglomerative hierarchical and k-means clustering)](#Cluster_analysis)  
+3. [Evaluation of cluster results](#Evaluation_cluster_results)  
+
+
+#### 1. Summary 
+```{r}
+country_df <- read.csv("Country-data.csv")
+
+#getting the structure of the data to see what variables are not numeric.
+str(country_df)
+
+summary(country_df)
+
+#PCA can only be applied on numerical values. As there is a column with char value, we should either drop that from the dataset and apply PCA, or convert it to numeric values. Here, we have converted it into numeric values.  
+country_df$country = as.numeric(as.factor(country_df$country))
+str(country_df)
+
+#calculating person correlation coefficient for each pair of variables
+cor(country_df)
+```
+
+#### 2. Graphical analysis
+```{r}
+#Generating histograms on the same page
+opar <- par(no.readonly = TRUE)
+par(mfrow = c(3,3))
+hist(country_df[, 2], main = names(country_df)[2], xlab = names(country_df)[2], xlim = c(0,200))
+hist(country_df[, 3], main = names(country_df)[3], xlab = names(country_df)[3], xlim = c(0,200))
+hist(country_df[, 4], main = names(country_df)[4], xlab = names(country_df)[4], xlim = c(0,20))
+hist(country_df[, 5], main = names(country_df)[5], xlab = names(country_df)[5], xlim = c(0,200))
+hist(country_df[, 6], main = names(country_df)[6], xlab = names(country_df)[6], xlim = c(0,150000))
+hist(country_df[, 7], main = names(country_df)[7], xlab = names(country_df)[7], xlim = c(0,200))
+hist(country_df[, 8], main = names(country_df)[8], xlab = names(country_df)[8], xlim = c(0,200))
+hist(country_df[, 9], main = names(country_df)[9], xlab = names(country_df)[9], xlim = c(0,20))
+hist(country_df[, 10], main = names(country_df)[10], xlab = names(country_df)[10], xlim = c(0,150000))
+par(opar)
+
+#Generating density plot for each variable on the same page
+opar <- par(no.readonly = TRUE)
+par(mfrow = c(3,3))
+plot(density(country_df[, 2]), main = names(country_df)[2], xlab = names(country_df)[2])
+plot(density(country_df[, 3]), main = names(country_df)[3], xlab = names(country_df)[3])
+plot(density(country_df[, 4]), main = names(country_df)[4], xlab = names(country_df)[4])
+plot(density(country_df[, 5]), main = names(country_df)[5], xlab = names(country_df)[5])
+plot(density(country_df[, 6]), main = names(country_df)[6], xlab = names(country_df)[6])
+plot(density(country_df[, 7]), main = names(country_df)[7], xlab = names(country_df)[7])
+plot(density(country_df[, 8]), main = names(country_df)[8], xlab = names(country_df)[8])
+plot(density(country_df[, 9]), main = names(country_df)[9], xlab = names(country_df)[9])
+plot(density(country_df[, 10]), main = names(country_df)[10], xlab = names(country_df)[10])
+par(opar)
+
+#Generating boxplot for each variable on the same graph
+opar <- par(no.readonly = TRUE)
+boxplot(
+  country_df,
+  border = 'white',
+  yaxt = 'n'
+)
+abline(h = seq(0,100,10), lty = 'dashed', lwd = 2, col = 'darkgrey')
+boxplot(
+  country_df,
+  border = 'blue',
+  yaxt = 'n',
+  add = T
+)
+axis(2, seq(0,100,10))
+par(opar)
+```
+
+
+#### 3. Principal Component Analysis
+```{r}
+pca_COUNTRY <- prcomp(country_df,scale = TRUE)
+attributes(pca_)
+#prcomp returns a List that has x, sdev, an rotation. x contains the PCs for drawing  graph 
+#There are 167 instances and 10 variables in the dataset. Therefore, the pca should have 10 variables, each one representing one PC. However, they are ranked in order of importance and the first PC accounts for the most variation in the original data. Thus, we draw the PCA plot with merely PC1 and PC2. 
+```
+
+#### 4. Visual analysis of PCA results
+### 4.1 My try
+```{r}
+#Creating PCA plot with x axis being PC1 and y axis being PC2 
+plot(pca$x[,1], pca$x[,2])
+
+#Calculating the variance each PC contribute to with the help of sdev which is standard deviation
+pca.var <- pca$sdev^2
+pca.var.per <- round(pca.var/sum(pca.var)*100,1)
+barplot(pca.var.per, main = "Scree plot", xlab = "Principal Component", ylab = "Percent Variation")
+
+#Getting the loading scores with the help of rotation
+loading_scors <- pca$rotation[,1]
+#getting the absolute values of the loading scores as we want to compare their value regardless of their sign
+variable_scors <- abs(loading_scors)
+#sorting the loading scores as descending
+variable_scors_ranked <- sort(variable_scors, decreasing = TRUE)
+#choosing top 5 variables that have the largest loading scores
+top_5_factors <- names(variable_scors_ranked[1:5])
+top_5_factors
+#getting the top five variables with the largest loading scores with their original sign to see which variables drive the data points to left and which ones drive them to right
+pca$rotation[top_5_factors,1]
+```
+
+### 4.2 From LAb_04_Tutorial: This is what I need to do for DDA as well
+In addition to the scree barplot and PCA plot, scree line graph and the loading score plots are drawn. 
+                   ```{r}
+# perform PCA on the swiss dataset
+#   note: variables are centered and scaled before analysis
+pc_swiss <- prcomp(swiss, center = T, scale. = T)
+
+# inspect the attributes of the PCA object returned by prcomp
+attributes(pc_swiss)
+# see value section of the help for the prcomp for more details
+help(prcomp)
+```
+
+#### 4. Visual analysis of PCA results{#Visual_analysis_PCA}
+```{r}
+plot(pc_swiss$x[,1], pc_swiss$x[,2])
+
+# calculate the proportion of explained variance (PEV) from the std values
+pc_swiss_var <- pc_swiss$sdev^2
+pc_swiss_var
+pc_swiss_PEV <- pc_swiss_var / sum(pc_swiss_var)
+pc_swiss_PEV
+
+# plot the variance per PC
+#   note: this can be done using the plot function on the prcomp object
+plot(pc_swiss)
+
+# plot the cumulative value of PEV for increasing number of additional PCs
+#   note: add an 80% threshold line to inform the feature extraction
+#     according to the plot the first 3 PCs should be selected
+opar <- par(no.readonly = TRUE)
+plot(
+  cumsum(pc_swiss_PEV),
+  ylim = c(0,1),
+  xlab = 'PC',
+  ylab = 'cumulative PEV',
+  pch = 20,
+  col = 'orange'
+)
+abline(h = 0.8, col = 'red', lty = 'dashed')
+par(opar)
+
+# get and inspect the loadings for each PC
+#   note: loadings are reported as a rotation matrix (see lecture)
+pc_swiss_loadings <- pc_swiss$rotation
+pc_swiss_loadings
+
+# plot the loadings for the first three PCs as a barplot
+#   note: two vectors for colours and labels are created for convenience
+#     for details on the other parameters see the help for barplot and legend
+opar <- par(no.readonly = TRUE)
+colvector = c('red', 'orange', 'yellow', 'green', 'cyan', 'blue')
+labvector = c('PC1', 'PC2', 'PC3')
+barplot(
+  pc_swiss_loadings[,c(1:3)],
+  beside = T,
+  yaxt = 'n',
+  names.arg = labvector,
+  col = colvector,
+  ylim = c(-1,1),
+  border = 'white',
+  ylab = 'loadings'
+)
+axis(2, seq(-1,1,0.1))
+legend(
+  'bottomright',
+  bty = 'n',
+  col = colvector,
+  pch = 15,
+  row.names(pc_swiss_loadings)
+)
+par(opar)
+
+# generate a biplot for each pair of important PCs (and show them on the same page)
+#   note: the option choices is used to select the PCs - default is 1:2
+opar <- par(no.readonly = TRUE)
+par(mfrow = c(2,2))
+biplot(
+  pc_swiss,
+  scale = 0,
+  col = c('grey40','orange')
+)
+biplot(
+  pc_swiss,
+  choices = c(1,3),
+  scale = 0,
+  col = c('grey40','orange')
+)
+biplot(
+  pc_swiss,
+  choices = c(2,3),
+  scale = 0,
+  col = c('grey40','orange')
+)
+par(opar)
+```
